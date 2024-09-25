@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>PlaylistPal - Input</title>
+        <style>
+            body {
+                background-color: #8ECAE6;
+                font-family: Arial, sans-serif;
+                margin: 0;
+                padding: 0;
+            }
+
+            h1 {
+                color: #3D405B;
+                text-align: center;
+                margin-top: 50px;
+            }
+
+            .container {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                height: 70vh;
+            }
+
+            .input-box {
+                padding: 10px;
+                width: 300px;
+                font-size: 18px;
+                border: 2px solid #3D405B;
+                border-radius: 5px;
+                margin-bottom: 20px;
+            }
+
+            .submit-button, .generate-button {
+                background-color: #3D405B;
+                color: #F5EBE0;
+                font-size: 18px;
+                padding: 10px 20px;
+                border: none;
+                border-radius: 5px;
+                cursor: pointer;
+            }
+
+            .submit-button:hover, .generate-button:hover {
+                background-color: #2C2E3A;
+            }
+
+            .generate-button {
+                margin-top: 20px;
+                display: none; /* Initially hidden */
+            }
+        </style>
+        <script>
+            function showGenerateButton(event) {
+                event.preventDefault(); // Prevent form submission for this example
+                document.getElementById('generate-button').style.display = 'block';
+            }
+        </script>
+    </head>
+    <body>
+        <h1>Input up to 5 Artists, Genres, or Songs</h1>
+        <div class="container">
+            <form onsubmit="showGenerateButton(event)">
+                <input type="text" class="input-box" name="music-input" placeholder="Enter an artist, genre, or song">
+                <button type="submit" class="submit-button">Submit</button>
+            </form>
+            <button id="generate-button" class="generate-button" onclick="alert('Generating your playlist...')" action="/input" method="POST">Generate Playlist</button>
+        </div>
+    </body>
+</html>
