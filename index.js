@@ -1,10 +1,15 @@
 const express = require('express'); // To build an application server or API
+const path = require('path');
 const app = express();
+
 const axios = require('axios'); // To make HTTP requests from our server. We'll learn more about it in Part B.
 app.engine('html', require('ejs').renderFile);
 app.set('view engine', 'html');
 
-app.set('views', __dirname + '/views');
+app.use(express.static(path.join(__dirname, 'public')));
+
+
+app.set('views', __dirname + '/public/views');
 
 app.get('/', (req, res) => {
     res.redirect('/home');

@@ -49,24 +49,18 @@
 
             .generate-button {
                 margin-top: 20px;
-                display: none; /* Initially hidden */
             }
         </style>
-        <script>
-            function showGenerateButton(event) {
-                event.preventDefault(); // Prevent form submission for this example
-                document.getElementById('generate-button').style.display = 'block';
-            }
-        </script>
     </head>
     <body>
         <h1>Input up to 5 Artists, Genres, or Songs</h1>
         <div class="container">
-            <form onsubmit="showGenerateButton(event)">
-                <input type="text" class="input-box" name="music-input" placeholder="Enter an artist, genre, or song">
+            <form id="input-seeds">
+                <input type="text" class="input-box" name="seed-input" placeholder="Enter an artist, genre, or song">
                 <button type="submit" class="submit-button">Submit</button>
             </form>
-            <button id="generate-button" class="generate-button" onclick="alert('Generating your playlist...')" action="/input" method="POST">Generate Playlist</button>
+            <button id="generate-button" type="submit"class="generate-button" action="/input" method="GET"onclick="alert('Generating your playlist...')">Generate Playlist</button>
         </div>
+        <script src="/helpers/input_handler.js"></script>
     </body>
 </html>
