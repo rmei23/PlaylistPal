@@ -57,22 +57,20 @@
     </head>
     <body>
         <h1>PlaylistPal</h1>
-        <p>
-            <bk>
-                combine up to 5 artists, songs, or genres into a custom playlist just for YOU!
-            </bk>
-        </p>
-        <div class="container">
-            <% if (authenticated) { %>
-                <a href="/input" class="button">Create Your Own Playlist</a>
-            <% } else { %>
-                <a href="/login" class="button">Login with Spotify</a>
-            <% } %>
-        </div>
-        <footer>
-            <a href="/about" class="footer-button">
-                <img src="/images/riley_liya.JPG" alt="Footer Button">
-            </a>
-        </footer>
     </body>
+    <p>
+        <bk>
+            combine up to 5 artists, songs, or genres into a custom playlist just for YOU!
+        </bk>
+        <bk>
+        </bk>
+    </p>
+    <div class="container">
+        <a href = "/input" class="button">Create Your Own Playlist</a>
+    </div>
+    <footer>
+        <a href="/about" class="footer-button">
+          <img src="/images/riley_liya.JPG" alt="Footer Button">
+        </a>
+    </footer>
 </html>
