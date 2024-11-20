@@ -50,6 +50,32 @@
             .generate-button {
                 margin-top: 20px;
             }
+
+            /* Footer Styles */
+            footer {
+                position: fixed;
+                bottom: 0;
+                width: 100%;
+                background-color: #3D405B;
+                text-align: center;
+                height: 50px;
+            }
+
+            .footer-button {
+                display: inline-block;
+                margin: 10px;
+            }
+
+            .footer-button img {
+                width: 35px;
+                height: 35px;
+                border-radius: 50%;
+                cursor: pointer;
+            }
+
+            .footer-button:hover {
+                opacity: 0.8;
+            }
         </style>
     </head>
     <body>
@@ -61,6 +87,11 @@
             </form>
             <button id="generate-button" type="submit"class="generate-button" action="/input" method="GET"onclick="alert('Generating your playlist...')">Generate Playlist</button>
         </div>
+        <footer>
+            <a href="/about" class="footer-button">
+                <img src="/images/riley_liya.JPG" alt="Footer Button">
+            </a>
+        </footer>
         <script src="/helpers/input_handler.js"></script>
     </body>
 </html>
