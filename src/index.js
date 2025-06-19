@@ -5,7 +5,7 @@ const path = require('path');
 const axios = require('axios'); // To make HTTP requests from our server. We'll learn more about it in Part B.
 const querystring = require('querystring');
 const session = require('express-session');
-const spotifyHelpers = require('./src/helpers/helpers');
+const spotifyHelpers = require('./helpers/helpers');
 
 const app = express();
 
@@ -23,9 +23,9 @@ app.use(session({
 app.engine('html', require('ejs').renderFile);
 app.set('view engine', 'html');
 
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, '..', 'public')));
 
-app.set('views', __dirname + '/public/views');
+app.set('views', path.join(__dirname, '..', 'public', 'views'));
 
 var client_id = process.env.CLIENT_ID;
 var redirect_uri = 'http://localhost:3000/callback';
@@ -36,6 +36,42 @@ app.get('/', (req, res) => {
         res.redirect('/home');
     } else {
         res.redirect('/login');
+    }
+});
+
+// Endpoint to search for artists by name
+app.get('/api/search-artist', async (req, res) => {
+    const name = req.query.name;
+    if (!name) {
+        return res.status(400).json({ error: 'Missing artist name' });
+    }
+    try {
+        // Ensure we have a valid access token in the session
+        let accessToken = req.session.spotifyToken && req.session.spotifyToken.access_token;
+        if (!accessToken || Date.now() > req.session.spotifyToken.expires_at) {
+            return res.status(401).json({ error: 'Spotify access token missing or expired. Please log in again.' });
+        }
+        const response = await axios.get('https://api.spotify.com/v1/search', {
+            headers: {
+                'Authorization': `Bearer ${accessToken}`
+            },
+            params: {
+                q: name,
+                type: 'artist',
+                limit: 5
+            }
+        });
+        const artists = response.data.artists.items.map(artist => ({
+            name: artist.name,
+            id: artist.id,
+            image: artist.images && artist.images[0] ? artist.images[0].url : null,
+            genres: artist.genres,
+            popularity: artist.popularity
+        }));
+        res.json({ artists });
+    } catch (err) {
+        console.error('Error searching for artist:', err.response ? err.response.data : err.message);
+        res.status(500).json({ error: 'Failed to search for artist' });
     }
 });
 

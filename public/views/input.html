@@ -85,6 +85,7 @@
                 <input type="text" class="input-box" name="seed-input" placeholder="Enter an artist, genre, or song">
                 <button type="submit" class="submit-button">Submit</button>
             </form>
+            <div id="seed-list" style="margin-top: 16px;"></div>
             <button id="generate-button" type="submit"class="generate-button" action="/input" method="GET"onclick="alert('Generating your playlist...')">Generate Playlist</button>
         </div>
         <footer>
@@ -92,6 +93,16 @@
                 <img src="/images/riley_liya.JPG" alt="Footer Button">
             </a>
         </footer>
+
+        <!-- Artist Selection Modal -->
+        <div id="artist-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.6); z-index:1000; justify-content:center; align-items:center;">
+            <div id="artist-modal-content" style="background:#fff; padding:32px; border-radius:12px; max-width:500px; margin:auto;">
+                <h3>Select an Artist</h3>
+                <div id="artist-options"></div>
+                <button id="artist-modal-cancel" style="margin-top:16px;">Cancel</button>
+            </div>
+        </div>
+
         <script src="/helpers/input_handler.js"></script>
     </body>
 </html>
