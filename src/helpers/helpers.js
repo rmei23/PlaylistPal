@@ -49,7 +49,36 @@ async function getAccessToken(code, redirect_uri) {
     }
 }
 
+/**
+ * Refreshes an access token using a refresh token
+ * @param {string} refresh_token
+ * @returns {Promise} Promise that resolves with the new access token response
+ */
+async function refreshAccessToken(refresh_token) {
+    try {
+        const tokenResponse = await axios({
+            method: 'post',
+            url: 'https://accounts.spotify.com/api/token',
+            data: querystring.stringify({
+                refresh_token: refresh_token,
+                grant_type: 'refresh_token'
+            }),
+            headers: {
+                'Authorization': 'Basic ' + Buffer.from(
+                    process.env.CLIENT_ID + ':' + process.env.CLIENT_SECRET
+                ).toString('base64'),
+                'Content-Type': 'application/x-www-form-urlencoded'
+            }
+        });
+        return tokenResponse.data;
+    } catch (error) {
+        console.error('Error in refreshAccessToken:', error.response ? error.response.data : error.message);
+        throw error;
+    }
+}
+
 module.exports = {
     generateRandomString,
-    getAccessToken
+    getAccessToken,
+    refreshAccessToken
 };

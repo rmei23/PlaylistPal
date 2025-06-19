@@ -9,6 +9,9 @@ const spotifyHelpers = require('./helpers/helpers');
 
 const app = express();
 
+// Add middleware to parse JSON bodies
+app.use(express.json());
+
 // Set up session middleware
 app.use(session({
     secret: 'your_session_secret',  // Change this to a secure random string
@@ -47,10 +50,31 @@ app.get('/api/search-artist', async (req, res) => {
     }
     try {
         // Ensure we have a valid access token in the session
-        let accessToken = req.session.spotifyToken && req.session.spotifyToken.access_token;
-        if (!accessToken || Date.now() > req.session.spotifyToken.expires_at) {
+        let spotifyToken = req.session.spotifyToken;
+        let accessToken = spotifyToken && spotifyToken.access_token;
+        let expiresAt = spotifyToken && spotifyToken.expires_at;
+        let refreshToken = spotifyToken && spotifyToken.refresh_token;
+        // If token expired but we have a refresh token, refresh it
+        if ((!accessToken || Date.now() > expiresAt) && refreshToken) {
+            try {
+                const tokenData = await spotifyHelpers.refreshAccessToken(refreshToken);
+                accessToken = tokenData.access_token;
+                // Update session with new token and expiration
+                req.session.spotifyToken.access_token = accessToken;
+                req.session.spotifyToken.expires_in = tokenData.expires_in;
+                req.session.spotifyToken.expires_at = Date.now() + (tokenData.expires_in * 1000);
+                // Optionally update refresh_token if provided
+                if (tokenData.refresh_token) {
+                    req.session.spotifyToken.refresh_token = tokenData.refresh_token;
+                }
+            } catch (refreshError) {
+                console.error('Failed to refresh Spotify token:', refreshError.response ? refreshError.response.data : refreshError.message);
+                return res.status(401).json({ error: 'Spotify access token expired and refresh failed. Please log in again.' });
+            }
+        } else if (!accessToken) {
             return res.status(401).json({ error: 'Spotify access token missing or expired. Please log in again.' });
         }
+        // Now perform the artist search
         const response = await axios.get('https://api.spotify.com/v1/search', {
             headers: {
                 'Authorization': `Bearer ${accessToken}`
@@ -72,6 +96,86 @@ app.get('/api/search-artist', async (req, res) => {
     } catch (err) {
         console.error('Error searching for artist:', err.response ? err.response.data : err.message);
         res.status(500).json({ error: 'Failed to search for artist' });
+    }
+});
+
+app.post('/api/generate-playlist', async (req, res) => {
+    try {
+        // Parse seeds and playlist name from request body
+        const { seed_artists, seed_tracks, seed_genres, limit, playlist_name } = req.body;
+        // Ensure we have a valid access token (with refresh logic)
+        let spotifyToken = req.session.spotifyToken;
+        let accessToken = spotifyToken && spotifyToken.access_token;
+        let expiresAt = spotifyToken && spotifyToken.expires_at;
+        let refreshToken = spotifyToken && spotifyToken.refresh_token;
+        if ((!accessToken || Date.now() > expiresAt) && refreshToken) {
+            try {
+                const tokenData = await spotifyHelpers.refreshAccessToken(refreshToken);
+                accessToken = tokenData.access_token;
+                req.session.spotifyToken.access_token = accessToken;
+                req.session.spotifyToken.expires_in = tokenData.expires_in;
+                req.session.spotifyToken.expires_at = Date.now() + (tokenData.expires_in * 1000);
+                if (tokenData.refresh_token) {
+                    req.session.spotifyToken.refresh_token = tokenData.refresh_token;
+                }
+            } catch (refreshError) {
+                return res.status(401).json({ error: 'Spotify access token expired and refresh failed. Please log in again.' });
+            }
+        } else if (!accessToken) {
+            return res.status(401).json({ error: 'Spotify access token missing or expired. Please log in again.' });
+        }
+        // 1. Get recommendations
+        // Only include non-empty seeds in params
+        const params = {};
+        if (seed_artists) params.seed_artists = seed_artists;
+        if (seed_tracks) params.seed_tracks = seed_tracks;
+        if (seed_genres) params.seed_genres = seed_genres;
+        params.limit = limit || 10;
+        const recRes = await axios.get('https://api.spotify.com/v1/recommendations', {
+            headers: {
+                'Authorization': `Bearer ${accessToken}`
+            },
+            params
+        });
+        const tracks = recRes.data.tracks;
+        if (!tracks || tracks.length === 0) {
+            return res.status(400).json({ error: 'No recommendations found.' });
+        }
+        // 2. Get user ID
+        const userRes = await axios.get('https://api.spotify.com/v1/me', {
+            headers: { 'Authorization': `Bearer ${accessToken}` }
+        });
+        const userId = userRes.data.id;
+        // 3. Create new playlist
+        const playlistRes = await axios.post(`https://api.spotify.com/v1/users/${userId}/playlists`, {
+            name: playlist_name || 'PlaylistPal Recommendations',
+            description: 'Playlist generated by PlaylistPal',
+            public: false
+        }, {
+            headers: { 'Authorization': `Bearer ${accessToken}` }
+        });
+        const playlistId = playlistRes.data.id;
+        // 4. Add tracks to playlist
+        const uris = tracks.map(t => t.uri);
+        await axios.post(`https://api.spotify.com/v1/playlists/${playlistId}/tracks`, {
+            uris
+        }, {
+            headers: { 'Authorization': `Bearer ${accessToken}` }
+        });
+        // 5. Return playlist URL
+        res.json({
+            playlist_url: playlistRes.data.external_urls.spotify,
+            playlist_id: playlistId,
+            tracks: uris
+        });
+    } catch (err) {
+        // Log full error details for debugging
+        console.error('Error generating playlist:', err);
+        if (err.response && err.response.data) {
+            res.status(500).json({ error: 'Failed to generate playlist', details: err.response.data });
+        } else {
+            res.status(500).json({ error: 'Failed to generate playlist', details: err.message });
+        }
     }
 });
 
@@ -115,7 +219,8 @@ app.get('/callback', async function(req, res) {
             access_token: data.access_token,
             token_type: data.token_type,
             expires_in: data.expires_in,
-            expires_at: Date.now() + (data.expires_in * 1000) // Calculate expiration time
+            expires_at: Date.now() + (data.expires_in * 1000), // Calculate expiration time
+            refresh_token: data.refresh_token // Store refresh token if present
         };
 
         // Redirect to home page

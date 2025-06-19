@@ -82,11 +82,11 @@
         <h1>Input up to 5 Artists, Genres, or Songs</h1>
         <div class="container">
             <form id="input-seeds">
-                <input type="text" class="input-box" name="seed-input" placeholder="Enter an artist, genre, or song">
+                <input type="text" class="input-box" name="seed-input" placeholder="Enter up to 5 artists">
                 <button type="submit" class="submit-button">Submit</button>
             </form>
             <div id="seed-list" style="margin-top: 16px;"></div>
-            <button id="generate-button" type="submit"class="generate-button" action="/input" method="GET"onclick="alert('Generating your playlist...')">Generate Playlist</button>
+            <button id="generate-button" type="submit"class="generate-button" action="/input">Generate Playlist</button>
         </div>
         <footer>
             <a href="/about" class="footer-button">

@@ -122,3 +122,67 @@ function showArtistModal(artists, onSelect) {
 
 
 document.addEventListener('DOMContentLoaded', updateSeedList);
+
+// Generate Playlist button logic
+const generateBtn = document.getElementById('generate-button');
+if (generateBtn) {
+    generateBtn.onclick = async function(e) {
+        e.preventDefault();
+        if (inputSeeds.length === 0) {
+            alert('Please add at least one seed.');
+            return;
+        }
+        // Separate seeds by type
+        const seed_artists = inputSeeds.filter(s => s.type === 'artist' && s.id).map(s => s.id).join(',');
+        const seed_tracks = inputSeeds.filter(s => s.type === 'track' && s.id).map(s => s.id).join(',');
+        const seed_genres = inputSeeds.filter(s => s.type === 'genre' && s.name).map(s => s.name).join(',');
+        const payload = {
+            seed_artists,
+            seed_tracks,
+            seed_genres,
+            limit: 10, // or let user choose
+            playlist_name: 'PlaylistPal Recommendations'
+        };
+        try {
+            const res = await fetch('/api/generate-playlist', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            if (res.ok && data.playlist_url) {
+                // Save to sessionStorage and redirect
+                sessionStorage.setItem('playlist_url', data.playlist_url);
+                sessionStorage.setItem('tracks', JSON.stringify(data.tracks));
+                window.location.href = '/result';
+            } else {
+                alert(data.error || 'Failed to generate playlist.');
+            }
+        } catch (err) {
+            alert('Error generating playlist.');
+        }
+    };
+}
+
+// On /result page, populate the playlist info from sessionStorage
+if (window.location.pathname === '/result') {
+    document.addEventListener('DOMContentLoaded', function() {
+        const playlistUrl = sessionStorage.getItem('playlist_url');
+        const tracks = JSON.parse(sessionStorage.getItem('tracks') || '[]');
+        if (playlistUrl) {
+            const link = document.querySelector('.playlist-link');
+            if (link) link.href = playlistUrl;
+        }
+        if (tracks.length > 0) {
+            const ul = document.querySelector('ul');
+            if (ul) {
+                ul.innerHTML = '';
+                tracks.forEach(track => {
+                    const li = document.createElement('li');
+                    li.textContent = track;
+                    ul.appendChild(li);
+                });
+            }
+        }
+    });
+}
