@@ -17,76 +17,157 @@
             }
 
             .container {
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-                height: 70vh;
-            }
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 70vh;
+}
 
-            .input-box {
-                padding: 10px;
-                width: 300px;
-                font-size: 18px;
-                border: 2px solid #3D405B;
-                border-radius: 5px;
-                margin-bottom: 20px;
-            }
+.form-row {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 16px;
+    width: 100%;
+    justify-content: center;
+    margin-bottom: 24px;
+}
 
-            .submit-button, .generate-button {
-                background-color: #3D405B;
-                color: #F5EBE0;
-                font-size: 18px;
-                padding: 10px 20px;
-                border: none;
-                border-radius: 5px;
-                cursor: pointer;
-            }
+.visually-hidden {
+    position: absolute;
+    left: -10000px;
+    top: auto;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+}
 
-            .submit-button:hover, .generate-button:hover {
-                background-color: #2C2E3A;
-            }
+.input-box {
+    padding: 10px;
+    width: 300px;
+    font-size: 18px;
+    border: 2px solid #3D405B;
+    border-radius: 5px;
+    margin-bottom: 0;
+    height: 44px;
+    box-sizing: border-box;
+}
 
-            .generate-button {
-                margin-top: 20px;
-            }
+            .playlist-length-box {
+    width: 120px;
+    padding: 10px;
+    font-size: 18px;
+    border: 2px solid #3D405B;
+    border-radius: 5px;
+    height: 44px;
+    box-sizing: border-box;
+    margin-bottom: 0;
+    /* Hide spinner buttons for all browsers */
+    -webkit-appearance: none;
+    -moz-appearance: textfield;
+    appearance: textfield;
+    display: inline-block;
+    vertical-align: middle;
+}
+/* Remove spinners for Chrome, Safari, Edge */
+.playlist-length-box::-webkit-outer-spin-button,
+.playlist-length-box::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+/* Remove spinners for Firefox */
+.playlist-length-box[type=number] {
+    -moz-appearance: textfield;
+}
 
-            /* Footer Styles */
-            footer {
-                position: fixed;
-                bottom: 0;
-                width: 100%;
-                background-color: #3D405B;
-                text-align: center;
-                height: 50px;
-            }
+.playlist-length-box::-webkit-outer-spin-button,
+.playlist-length-box::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+/* Remove spinners for Firefox */
+.playlist-length-box[type=number] {
+    -moz-appearance: textfield;
+    width: 120px;
+    display: inline-block;
+    vertical-align: middle;
+    padding: 10px;
+    font-size: 18px;
+    border: 2px solid #3D405B;
+    border-radius: 5px;
+    margin-bottom: 20px;
+}
 
-            .footer-button {
-                display: inline-block;
-                margin: 10px;
-            }
+.submit-button, .generate-button {
+    background-color: #3D405B;
+    color: #F5EBE0;
+    font-size: 18px;
+    padding: 0 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    height: 44px;
+    box-sizing: border-box;
+    margin-bottom: 0;
+    display: flex;
+    align-items: center;
+}
 
-            .footer-button img {
-                width: 35px;
-                height: 35px;
-                border-radius: 50%;
-                cursor: pointer;
-            }
+.submit-button:hover, .generate-button:hover {
+    background-color: #2C2E3A;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
 
-            .footer-button:hover {
-                opacity: 0.8;
-            }
-        </style>
-    </head>
-    <body>
-        <h1>Input up to 5 Artists, Genres, or Songs</h1>
-        <div class="container">
-            <form id="input-seeds">
-                <input type="text" class="input-box" name="seed-input" placeholder="Enter up to 5 artists">
-                <button type="submit" class="submit-button">Submit</button>
+.submit-button:hover, .generate-button:hover {
+    background-color: #2C2E3A;
+}
+
+.generate-button {
+    margin-top: 20px;
+}
+
+/* Footer Styles */
+footer {
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    background-color: #3D405B;
+    text-align: center;
+    height: 50px;
+}
+
+.footer-button {
+    display: inline-block;
+    margin: 10px;
+}
+
+.footer-button img {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.footer-button:hover {
+    opacity: 0.8;
+}
+</style>
+</head>
+<body>
+    <h1>Input up to 5 Artists, Genres, or Songs</h1>
+    <div class="container">
+        <form id="prompt-form" class="form-row">
+                <label for="playlist-prompt" class="visually-hidden">Describe your ideal playlist:</label>
+                <input type="text" class="input-box" id="playlist-prompt" name="playlist-prompt" placeholder="e.g. upbeat indie pop for summer" required>
+                <label for="playlist-length" class="visually-hidden">How many songs? (1-100):</label>
+                <input type="number" class="input-box playlist-length-box" id="playlist-length" name="playlist-length" placeholder="# of songs" min="1" max="100" required>
+                <button type="submit" class="generate-button">Generate Playlist</button>
             </form>
-            <div id="seed-list" style="margin-top: 16px;"></div>
-            <button id="generate-button" type="submit"class="generate-button" action="/input">Generate Playlist</button>
+            <p style="margin-top: 16px;">Describe the mood, genres, artists, or any vibes you want in your playlist!</p>
         </div>
         <footer>
             <a href="/about" class="footer-button">

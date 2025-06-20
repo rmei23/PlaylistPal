@@ -1,5 +1,6 @@
 require('dotenv').config();
 
+const OpenAI = require('openai');
 const express = require('express'); // To build an application server or API
 const path = require('path');
 const axios = require('axios'); // To make HTTP requests from our server. We'll learn more about it in Part B.
@@ -9,7 +10,7 @@ const spotifyHelpers = require('./helpers/helpers');
 
 const app = express();
 
-// Add middleware to parse JSON bodies
+// Add middleware to parse JSON bodes
 app.use(express.json());
 
 // Set up session middleware
@@ -101,8 +102,17 @@ app.get('/api/search-artist', async (req, res) => {
 
 app.post('/api/generate-playlist', async (req, res) => {
     try {
-        // Parse seeds and playlist name from request body
-        const { seed_artists, seed_tracks, seed_genres, limit, playlist_name } = req.body;
+        const { prompt, playlistLength } = req.body;
+        let numSongs = parseInt(playlistLength, 10);
+        if (isNaN(numSongs) || numSongs < 1) numSongs = 20;
+        if (numSongs > 100) numSongs = 100;
+        if (!prompt) {
+            return res.status(400).json({ error: 'Missing playlist prompt.' });
+        }
+        // Check for OpenAI API Key
+        if (!process.env.OPENAI_API_KEY) {
+            return res.status(500).json({ error: 'OpenAI API key not set in .env.' });
+        }
         // Ensure we have a valid access token (with refresh logic)
         let spotifyToken = req.session.spotifyToken;
         let accessToken = spotifyToken && spotifyToken.access_token;
@@ -124,49 +134,106 @@ app.post('/api/generate-playlist', async (req, res) => {
         } else if (!accessToken) {
             return res.status(401).json({ error: 'Spotify access token missing or expired. Please log in again.' });
         }
-        // 1. Get recommendations
-        // Only include non-empty seeds in params
-        const params = {};
-        if (seed_artists) params.seed_artists = seed_artists;
-        if (seed_tracks) params.seed_tracks = seed_tracks;
-        if (seed_genres) params.seed_genres = seed_genres;
-        params.limit = limit || 10;
-        const recRes = await axios.get('https://api.spotify.com/v1/recommendations', {
-            headers: {
-                'Authorization': `Bearer ${accessToken}`
-            },
-            params
+
+        // 1. Call OpenAI to get playlist songs
+        const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+        const systemPrompt = `Given the following playlist description, respond ONLY with a valid JSON array of exactly ${numSongs} objects, each with an 'artist' and 'track' key, representing songs that fit the description. Do NOT include any explanation or extra text. Example: [ {"artist": "Phoebe Bridgers", "track": "Kyoto"}, {"artist": "The 1975", "track": "If You’re Too Shy (Let Me Know)"} ]\nPlaylist description: "${prompt}"`;
+        const completion = await openai.chat.completions.create({
+            model: 'gpt-3.5-turbo',
+            messages: [
+                { role: 'system', content: 'You are a playlist generator for Spotify.' },
+                { role: 'user', content: systemPrompt }
+            ],
+            max_tokens: 600,
+            temperature: 0.8
         });
-        const tracks = recRes.data.tracks;
-        if (!tracks || tracks.length === 0) {
-            return res.status(400).json({ error: 'No recommendations found.' });
+        // Try to parse the response as JSON
+        let songList;
+        try {
+            if (!completion || !completion.choices || !completion.choices[0] || !completion.choices[0].message || !completion.choices[0].message.content) {
+                console.error('Unexpected OpenAI API response:', JSON.stringify(completion, null, 2));
+                return res.status(500).json({ error: 'OpenAI API did not return expected response structure.', openai_response: completion });
+            }
+            const text = completion.choices[0].message.content.trim();
+            console.log('Raw OpenAI response:', text); // Log the response for debugging
+            try {
+                songList = JSON.parse(text);
+            } catch (err) {
+                // Attempt to extract JSON array from the response if extra text is present
+                const match = text.match(/\[.*\]/s);
+                if (match) {
+                    songList = JSON.parse(match[0]);
+                } else {
+                    throw err;
+                }
+            }
+        } catch (err) {
+            return res.status(500).json({ error: 'Failed to parse OpenAI response as JSON.', openai_response: completion });
         }
-        // 2. Get user ID
-        const userRes = await axios.get('https://api.spotify.com/v1/me', {
-            headers: { 'Authorization': `Bearer ${accessToken}` }
-        });
-        const userId = userRes.data.id;
-        // 3. Create new playlist
-        const playlistRes = await axios.post(`https://api.spotify.com/v1/users/${userId}/playlists`, {
-            name: playlist_name || 'PlaylistPal Recommendations',
-            description: 'Playlist generated by PlaylistPal',
+        if (!Array.isArray(songList) || songList.length === 0) {
+            return res.status(500).json({ error: 'OpenAI did not return any songs.' });
+        }
+
+        // 2. For each { artist, track } pair, search Spotify for the track to get its URI
+        const foundTracks = [];
+        for (const item of songList) {
+            if (!item.artist || !item.track) continue;
+            try {
+                const q = `track:${item.track} artist:${item.artist}`;
+                const searchRes = await axios.get('https://api.spotify.com/v1/search', {
+                    headers: { 'Authorization': `Bearer ${accessToken}` },
+                    params: { q, type: 'track', limit: 1 }
+                });
+                const track = searchRes.data.tracks.items[0];
+                if (track && track.uri) {
+                    foundTracks.push({ uri: track.uri, artist: track.artists[0].name, title: track.name });
+                }
+            } catch (err) {
+                // Skip if not found
+                continue;
+            }
+        }
+        if (foundTracks.length === 0) {
+            return res.status(400).json({ error: 'No matching tracks found on Spotify.' });
+        }
+
+        // 3. Create a new playlist
+        // Find a unique playlist name: playlistPal, playlistPal 1, playlistPal 2, ...
+        let baseName = 'playlistPal';
+        let playlistName = baseName;
+        let suffix = 1;
+        let existing = true;
+        while (existing) {
+            // Search for existing playlists with this name
+            const existingRes = await axios.get('https://api.spotify.com/v1/me/playlists', {
+                headers: { 'Authorization': `Bearer ${accessToken}` },
+                params: { limit: 50 }
+            });
+            existing = existingRes.data.items.some(p => p.name === playlistName);
+            if (existing) {
+                playlistName = `${baseName} ${suffix++}`;
+            }
+        }
+        const playlistRes = await axios.post('https://api.spotify.com/v1/me/playlists', {
+            name: playlistName,
             public: false
         }, {
             headers: { 'Authorization': `Bearer ${accessToken}` }
         });
         const playlistId = playlistRes.data.id;
         // 4. Add tracks to playlist
-        const uris = tracks.map(t => t.uri);
+        const uris = foundTracks.map(t => t.uri);
         await axios.post(`https://api.spotify.com/v1/playlists/${playlistId}/tracks`, {
             uris
         }, {
             headers: { 'Authorization': `Bearer ${accessToken}` }
         });
-        // 5. Return playlist URL
+        // 5. Return playlist URL and track list
+        // Store playlist info in session for /result page
+        req.session.playlist_url = playlistRes.data.external_urls.spotify;
         res.json({
             playlist_url: playlistRes.data.external_urls.spotify,
-            playlist_id: playlistId,
-            tracks: uris
+            playlist_id: playlistId
         });
     } catch (err) {
         // Log full error details for debugging
@@ -186,7 +253,7 @@ app.get('/login', function(req, res) {
     }
 
     var state = spotifyHelpers.generateRandomString(16);
-    var scope = 'user-read-private user-read-email';
+    var scope = 'user-read-private user-read-email playlist-modify-private playlist-modify-public';
 
     res.redirect('https://accounts.spotify.com/authorize?' +
         querystring.stringify({
@@ -265,7 +332,12 @@ app.get('/input', requireSpotifyAuth, (req, res) => {
 });
 
 app.get('/result', requireSpotifyAuth, (req, res) => {
-    res.render('result.html');
+    const playlist_url = req.session.playlist_url || '';
+    const tracks = req.session.tracks || [];
+    // Clear session data after rendering to avoid stale info
+    req.session.playlist_url = undefined;
+    req.session.tracks = undefined;
+    res.render('result.html', { playlist_url, tracks });
 });
 
 app.get('/about', (req, res) => {

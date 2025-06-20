@@ -13,15 +13,9 @@
     <div class="container">
         <h1>Playlist Generated!</h1>
         <p>Your new playlist has been created successfully.</p>
+
         <a class="playlist-link" href="<%= playlist_url %>" target="_blank">Open your playlist on Spotify</a>
-        <% if (tracks && tracks.length > 0) { %>
-            <h2>Tracks Added:</h2>
-            <ul>
-            <% tracks.forEach(function(track) { %>
-                <li><%= track %></li>
-            <% }); %>
-            </ul>
-        <% } %>
+        <br>
         <a href="/input">Create another playlist</a>
     </div>
 </body>
