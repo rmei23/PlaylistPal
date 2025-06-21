@@ -68,10 +68,20 @@
         </p>
         <div class="container">
             <% if (authenticated) { %>
-                <a href="/input" class="button">Create Your Own Playlist</a>
+                <div>
+                    <a href="/input" class="button">Create Your Own Playlist</a>
+                    <p style="margin-top:20px; color:#3D405B;">You are logged in with Spotify!</p>
+                    <form action="/logout" method="post" style="margin-top:10px;">
+                        <button type="submit" class="button" style="background-color:#E63946;">Logout</button>
+                    </form>
+                </div>
             <% } else { %>
                 <a href="/login" class="button">Login with Spotify</a>
             <% } %>
+        </div>
+        <div style="text-align:center; color:#888; font-size:12px;">
+            <!-- Debug: Show authenticated variable -->
+            <p>Debug: authenticated = <%= authenticated %></p>
         </div>
         <footer>
             <a href="/about" class="footer-button">
