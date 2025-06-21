@@ -267,6 +267,7 @@ app.get('/login', function(req, res) {
 });
 
 app.get('/callback', async function(req, res) {
+    console.log('HIT /callback');
     const code = req.query.code || null;
     const state = req.query.state || null;
     const error = req.query.error || null;
@@ -290,7 +291,7 @@ app.get('/callback', async function(req, res) {
             expires_at: Date.now() + (data.expires_in * 1000), // Calculate expiration time
             refresh_token: data.refresh_token // Store refresh token if present
         };
-
+        console.log('Session after setting spotifyToken:', req.session);
         // Redirect to home page
         res.redirect('/home');
     } catch (error) {
@@ -318,6 +319,7 @@ function requireSpotifyAuth(req, res, next) {
 
 // Protect routes that need authentication
 app.get('/home', (req, res) => {
+    console.log('HIT /home, session:', req.session);
     // Check authentication here instead
     if (!req.session.spotifyToken || Date.now() > req.session.spotifyToken.expires_at) {
         // If not authenticated, show login button or message in home.html
