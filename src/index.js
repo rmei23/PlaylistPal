@@ -32,7 +32,7 @@ app.use(express.static(path.join(__dirname, '..', 'public')));
 app.set('views', path.join(__dirname, '..', 'public', 'views'));
 
 var client_id = process.env.CLIENT_ID;
-var redirect_uri = 'http://localhost:3000/callback';
+var redirect_uri = process.env.REDIRECT_URI;
 
 app.get('/', (req, res) => {
     // If user is already authenticated, go to home
