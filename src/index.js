@@ -23,9 +23,12 @@ const redisClient = new Redis({
     tls: {} // Redis Cloud requires TLS
 });
 
+// Set up RedisStore instance for session store
+const store = new RedisStore({ client: redisClient });
+
 // Set up session middleware to use Redis
 app.use(session({
-    store: new RedisStore({ client: redisClient }),
+    store,
     secret: 'your_session_secret', // Change this to a secure random string
     resave: false,
     saveUninitialized: false,
