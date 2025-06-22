@@ -17,12 +17,11 @@ app.use(express.json());
 
 // Set up Redis client for session store
 const redisClient = new Redis({
-  host: 'redis-16874.c241.us-east-1-4.ec2.redns.redis-cloud.com',
-  port: 16874,
-  username: 'default',
-  password: 'arSj2UkaJ7BZm6t3gHPln3xsUYsuFIOW'
-  // No TLS
-});
+    host: 'redis-16874.c241.us-east-1-4.ec2.redns.redis-cloud.com',
+    port: 16874,
+    password: 'arSj2UkaJ7BZm6t3gHPln3xsUYsuFIOW'
+    // no username, no tls
+  });
 
 // Set up RedisStore instance for session store
 const store = new RedisStore({ client: redisClient });
