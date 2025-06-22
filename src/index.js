@@ -6,6 +6,8 @@ const path = require('path');
 const axios = require('axios'); // To make HTTP requests from our server. We'll learn more about it in Part B.
 const querystring = require('querystring');
 const session = require('express-session');
+const RedisStore = require('connect-redis')(session);
+const Redis = require('ioredis');
 const spotifyHelpers = require('./helpers/helpers');
 
 const app = express();
@@ -13,14 +15,24 @@ const app = express();
 // Add middleware to parse JSON bodes
 app.use(express.json());
 
-// Set up session middleware
+// Set up Redis client for session store
+const redisClient = new Redis({
+    host: 'redis-16874.c241.us-east-1-4.ec2.redns.redis-cloud.com',
+    port: 16874,
+    password: 'arSj2UkaJ7BZm6t3gHPln3xsUYsuFIOW', // <-- Replace with your Redis Cloud password
+    tls: {} // Redis Cloud requires TLS
+});
+
+// Set up session middleware to use Redis
 app.use(session({
-    secret: 'your_session_secret',  // Change this to a secure random string
+    store: new RedisStore({ client: redisClient }),
+    secret: 'your_session_secret', // Change this to a secure random string
     resave: false,
     saveUninitialized: false,
-    cookie: { 
+    cookie: {
         secure: process.env.NODE_ENV === 'production', // Use secure cookies in production
-        maxAge: 1000 * 60 * 60 // 1 hour
+        maxAge: 1000 * 60 * 60, // 1 hour
+        httpOnly: true
     }
 }));
 
