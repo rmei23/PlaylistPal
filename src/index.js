@@ -21,8 +21,8 @@ const redisClient = new Redis('redis://:arSj2UkaJ7BZm6t3gHPln3xsUYsuFIOW@redis-1
 
 // Set up session middleware to use Redis
 app.use(session({
-    store: new RedisStore({ client: redisClient }),
-    secret: 'your_session_secret', // Change this to a secure random string
+    //store: new RedisStore({ client: redisClient }),
+    secret: process.env.SESSION_SECRET, // Change this to a secure random string
     resave: false,
     saveUninitialized: false,
     cookie: {
