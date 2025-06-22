@@ -6,7 +6,7 @@ const path = require('path');
 const axios = require('axios'); // To make HTTP requests from our server. We'll learn more about it in Part B.
 const querystring = require('querystring');
 const session = require('express-session');
-const RedisStore = require('connect-redis')(session);
+const RedisStore = require('connect-redis').default;
 const Redis = require('ioredis');
 const spotifyHelpers = require('./helpers/helpers');
 
