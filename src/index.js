@@ -16,6 +16,7 @@ const app = express();
 app.use(express.json());
 
 // Set up Redis client for session store
+process.env.DEBUG = 'ioredis:*';
 const redisClient = new Redis('redis://:arSj2UkaJ7BZm6t3gHPln3xsUYsuFIOW@redis-16874.c241.us-east-1-4.ec2.redns.redis-cloud.com:16874');
 
 // Set up RedisStore instance for session store
