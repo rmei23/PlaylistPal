@@ -153,7 +153,7 @@ app.post('/api/generate-playlist', async (req, res) => {
 
         // 1. Call OpenAI to get playlist songs
         const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-        const systemPrompt = `Given the following playlist description, respond ONLY with a valid JSON array of exactly ${numSongs} objects, each with an 'artist' and 'track' key, representing songs that fit the description. Do NOT include any explanation or extra text. Example: [ {"artist": "Phoebe Bridgers", "track": "Kyoto"}, {"artist": "The 1975", "track": "If You’re Too Shy (Let Me Know)"} ]\nPlaylist description: "${prompt}"`;
+        const systemPrompt = `Given the following playlist description, respond ONLY with a valid JSON array of exactly ${numSongs} objects, each with an 'artist' and 'track' key, representing songs that fit the description. Do NOT include any explanation, markdown, or extra text. Do NOT include any properties, objects, or output except the JSON array. Example: [ {"artist": "Phoebe Bridgers", "track": "Kyoto"}, {"artist": "The 1975", "track": "If You’re Too Shy (Let Me Know)"} ]\nPlaylist description: "${prompt}"`;
         const completion = await openai.chat.completions.create({
             model: 'gpt-3.5-turbo',
             messages: [
@@ -172,16 +172,18 @@ app.post('/api/generate-playlist', async (req, res) => {
             }
             const text = completion.choices[0].message.content.trim();
             console.log('Raw OpenAI response:', text); // Log the response for debugging
-            try {
-                songList = JSON.parse(text);
-            } catch (err) {
-                // Attempt to extract JSON array from the response if extra text is present
-                const match = text.match(/\[.*\]/s);
-                if (match) {
-                    songList = JSON.parse(match[0]);
-                } else {
-                    throw err;
+            let jsonMatch = text.match(/\[[\s\S]*?\]/);
+            if (jsonMatch) {
+                try {
+                    songList = JSON.parse(jsonMatch[0]);
+                    console.log('Extracted JSON array:', songList);
+                } catch (err) {
+                    console.error('Failed to parse extracted JSON array:', jsonMatch[0]);
+                    return res.status(500).json({ error: 'Failed to parse OpenAI response as JSON array.', openai_response: text });
                 }
+            } else {
+                console.error('No JSON array found in OpenAI response.');
+                return res.status(500).json({ error: 'No JSON array found in OpenAI response.', openai_response: text });
             }
         } catch (err) {
             return res.status(500).json({ error: 'Failed to parse OpenAI response as JSON.', openai_response: completion });
