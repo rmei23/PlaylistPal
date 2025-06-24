@@ -17,14 +17,20 @@ app.use(express.json());
 
 // Set up Redis client for session store
 process.env.DEBUG = 'ioredis:*';
-const redisClient = new Redis('redis://:arSj2UkaJ7BZm6t3gHPln3xsUYsuFIOW@redis-16874.c241.us-east-1-4.ec2.redns.redis-cloud.com:16874');
+
+// Use Railway-provided Redis URL
+const redisClient = new Redis(process.env.REDIS_URL);
+
+// Trust Railway's proxy for secure cookies
+app.set('trust proxy', 1);
 
 // Set up session middleware to use Redis
 app.use(session({
-    //store: new RedisStore({ client: redisClient }),
-    secret: process.env.SESSION_SECRET, // Change this to a secure random string
+    store: new RedisStore({ client: redisClient }),
+    secret: process.env.SESSION_SECRET, // Ensure this is a secure random string in your Railway env
     resave: false,
     saveUninitialized: false,
+    proxy: true,
     cookie: {
         secure: process.env.NODE_ENV === 'production', // Use secure cookies in production
         maxAge: 1000 * 60 * 60, // 1 hour
