@@ -137,15 +137,15 @@ footer {
 </head>
 <body>
     <h1>Input up to 5 Artists, Genres, or Songs</h1>
+    <p style="margin: 18px 0 24px 0; text-align: center; font-size: 1.1em; color: #444;">Describe the mood, genres, artists, or any vibes you want in your playlist!</p>
     <div class="container">
         <form id="prompt-form" class="form-row" style="display: flex; flex-direction: column; align-items: center;">
             <label for="playlist-prompt" class="visually-hidden">Describe your ideal playlist:</label>
             <input type="text" class="input-box" id="playlist-prompt" name="playlist-prompt" placeholder="e.g. upbeat indie pop for summer" required style="margin-bottom: 12px; width: 320px; max-width: 90vw;">
             <label for="playlist-length" class="visually-hidden">How many songs? (1-100):</label>
-            <input type="number" class="input-box playlist-length-box" id="playlist-length" name="playlist-length" placeholder="# of songs <= 30" min="1" max="30" required style="margin-bottom: 20px; width: 320px; max-width: 90vw;">
+            <input type="number" class="input-box playlist-length-box" id="playlist-length" name="playlist-length" placeholder="# of songs (max 30)" min="1" max="30" required style="margin-bottom: 20px; width: 320px; max-width: 90vw;">
             <button type="submit" class="generate-button" style="width: 320px; max-width: 90vw; margin: 0 auto;">Generate Playlist</button>
         </form>
-            <p style="margin-top: 16px;">Describe the mood, genres, artists, or any vibes you want in your playlist!</p>
         </div>
         <footer>
             <a href="/about" class="footer-button">
