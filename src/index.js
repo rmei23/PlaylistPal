@@ -197,12 +197,26 @@ app.post('/api/generate-playlist', async (req, res) => {
         for (const item of songList) {
             if (!item.artist || !item.track) continue;
             try {
-                const q = `track:${item.track} artist:${item.artist}`;
-                const searchRes = await axios.get('https://api.spotify.com/v1/search', {
+                // Try a more forgiving search: "track name artist name"
+                let q = `${item.track} ${item.artist}`;
+                let searchRes = await axios.get('https://api.spotify.com/v1/search', {
                     headers: { 'Authorization': `Bearer ${accessToken}` },
                     params: { q, type: 'track', limit: 1 }
                 });
-                const track = searchRes.data.tracks.items[0];
+                let track = searchRes.data.tracks.items[0];
+                console.log(`Searching Spotify for: "${q}"`);
+                console.log('Spotify search result:', searchRes.data.tracks.items);
+                // Fallback: try searching by track only if not found
+                if (!track) {
+                    q = item.track;
+                    searchRes = await axios.get('https://api.spotify.com/v1/search', {
+                        headers: { 'Authorization': `Bearer ${accessToken}` },
+                        params: { q, type: 'track', limit: 1 }
+                    });
+                    track = searchRes.data.tracks.items[0];
+                    console.log(`Fallback search for track only: "${q}"`);
+                    console.log('Spotify search result:', searchRes.data.tracks.items);
+                }
                 if (track && track.uri) {
                     foundTracks.push({ uri: track.uri, artist: track.artists[0].name, title: track.name });
                 }
