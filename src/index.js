@@ -259,6 +259,14 @@ app.post('/api/generate-playlist', async (req, res) => {
         }, {
             headers: { 'Authorization': `Bearer ${accessToken}` }
         });
+        // Set custom playlist cover image (pp.jpg)
+        const setPlaylistCover = require('./setPlaylistCover');
+        const coverPath = path.join(__dirname, '../public/images/pp.jpg');
+        try {
+            await setPlaylistCover(playlistId, accessToken, coverPath);
+        } catch (coverErr) {
+            console.error('Failed to set playlist cover:', coverErr.response ? coverErr.response.data : coverErr.message);
+        }
         // Return playlist URL and track list
         // Store playlist info in session for /result page
         req.session.playlist_url = playlistRes.data.external_urls.spotify;
