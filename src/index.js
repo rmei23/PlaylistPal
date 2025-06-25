@@ -1,9 +1,9 @@
 require('dotenv').config();
 
 const OpenAI = require('openai');
-const express = require('express'); // To build an application server or API
+const express = require('express');
 const path = require('path');
-const axios = require('axios'); // To make HTTP requests from our server. We'll learn more about it in Part B.
+const axios = require('axios');
 const querystring = require('querystring');
 const session = require('express-session');
 const RedisStore = require('connect-redis')(session);
@@ -27,12 +27,12 @@ app.set('trust proxy', 1);
 // Set up session middleware to use Redis
 app.use(session({
     store: new RedisStore({ client: redisClient }),
-    secret: process.env.SESSION_SECRET, // Ensure this is a secure random string in your Railway env
+    secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
     proxy: true,
     cookie: {
-        secure: process.env.NODE_ENV === 'production', // Use secure cookies in production
+        secure: process.env.NODE_ENV === 'production',
         maxAge: 1000 * 60 * 60, // 1 hour
         httpOnly: true,
         sameSite: 'none' // Allow cross-site cookies for OAuth
@@ -117,11 +117,6 @@ app.get('/api/search-artist', async (req, res) => {
 });
 
 app.post('/api/generate-playlist', async (req, res) => {
-    // --- DEBUG: Log session and token info for this request ---
-    console.log('--- GENERATE PLAYLIST REQUEST ---');
-    console.log('Session ID:', req.sessionID);
-    console.log('Session spotifyToken:', req.session.spotifyToken);
-    // ---------------------------------------------------------
     try {
         const { prompt, playlistLength } = req.body;
         let numSongs = parseInt(playlistLength, 10);
@@ -180,12 +175,10 @@ app.post('/api/generate-playlist', async (req, res) => {
                 return res.status(500).json({ error: 'OpenAI API did not return expected response structure.', openai_response: completion });
             }
             const text = completion.choices[0].message.content.trim();
-            console.log('Raw OpenAI response:', text); // Log the response for debugging
             let jsonMatch = text.match(/\[[\s\S]*?\]/);
             if (jsonMatch) {
                 try {
                     songList = JSON.parse(jsonMatch[0]);
-                    console.log('Extracted JSON array:', songList);
                 } catch (err) {
                     console.error('Failed to parse extracted JSON array:', jsonMatch[0]);
                     return res.status(500).json({ error: 'Failed to parse OpenAI response as JSON array.', openai_response: text });
@@ -214,8 +207,6 @@ app.post('/api/generate-playlist', async (req, res) => {
                     params: { q, type: 'track', limit: 1 }
                 });
                 let track = searchRes.data.tracks.items[0];
-                console.log(`Searching Spotify for: "${q}"`);
-                console.log('Spotify search result:', searchRes.data.tracks.items);
                 // Fallback: try searching by track only if not found
                 if (!track) {
                     q = item.track;
@@ -224,8 +215,6 @@ app.post('/api/generate-playlist', async (req, res) => {
                         params: { q, type: 'track', limit: 1 }
                     });
                     track = searchRes.data.tracks.items[0];
-                    console.log(`Fallback search for track only: "${q}"`);
-                    console.log('Spotify search result:', searchRes.data.tracks.items);
                 }
                 if (track && track.uri) {
                     foundTracks.push({ uri: track.uri, artist: track.artists[0].name, title: track.name });
@@ -240,7 +229,6 @@ app.post('/api/generate-playlist', async (req, res) => {
             return res.status(400).json({ error: 'No matching tracks found on Spotify.' });
         }
 
-        // 3. Create a new playlist
         // Find a unique playlist name: playlistPal, playlistPal 1, playlistPal 2, ...
         let baseName = 'playlistPal';
         let playlistName = baseName;
@@ -264,14 +252,14 @@ app.post('/api/generate-playlist', async (req, res) => {
             headers: { 'Authorization': `Bearer ${accessToken}` }
         });
         const playlistId = playlistRes.data.id;
-        // 4. Add tracks to playlist
+        // Add tracks to playlist
         const uris = foundTracks.map(t => t.uri);
         await axios.post(`https://api.spotify.com/v1/playlists/${playlistId}/tracks`, {
             uris
         }, {
             headers: { 'Authorization': `Bearer ${accessToken}` }
         });
-        // 5. Return playlist URL and track list
+        // Return playlist URL and track list
         // Store playlist info in session for /result page
         req.session.playlist_url = playlistRes.data.external_urls.spotify;
         res.json({
@@ -279,8 +267,6 @@ app.post('/api/generate-playlist', async (req, res) => {
             playlist_id: playlistId
         });
     } catch (err) {
-        // Log full error details for debugging
-        console.error('Error generating playlist:', err);
         if (err.response && err.response.data) {
             res.status(500).json({ error: 'Failed to generate playlist', details: err.response.data });
         } else {
@@ -330,11 +316,10 @@ app.get('/callback', async function(req, res) {
             access_token: data.access_token,
             token_type: data.token_type,
             expires_in: data.expires_in,
-            expires_at: Date.now() + (data.expires_in * 1000), // Calculate expiration time
+            expires_at: Date.now() + (data.expires_in * 1000),
             refresh_token: data.refresh_token // Store refresh token if present
         };
         console.log('Session after setting spotifyToken:', req.session);
-        // Redirect to home page
         res.redirect('/home');
     } catch (error) {
         console.error('Error in callback:', error);
@@ -351,7 +336,6 @@ function requireSpotifyAuth(req, res, next) {
         return res.redirect('/login');
     }
     
-    // Check if token is expired
     if (Date.now() > req.session.spotifyToken.expires_at) {
         return res.redirect('/login');
     }
@@ -361,13 +345,9 @@ function requireSpotifyAuth(req, res, next) {
 
 // Protect routes that need authentication
 app.get('/home', (req, res) => {
-    console.log('HIT /home, session:', req.session);
-    // Check authentication here instead
     if (!req.session.spotifyToken || Date.now() > req.session.spotifyToken.expires_at) {
-        // If not authenticated, show login button or message in home.html
         res.render('home.html', { authenticated: false });
     } else {
-        // If authenticated, show full functionality
         res.render('home.html', { authenticated: true });
     }
 });
@@ -387,17 +367,6 @@ app.get('/result', requireSpotifyAuth, (req, res) => {
 
 app.get('/about', (req, res) => {
     res.render('about.html');
-});
-
-// Example route using helper function
-app.get('/search', async (req, res) => {
-    try {
-        const query = req.query.q;
-        const tracks = await spotifyHelpers.searchTracks(query);
-        res.json(tracks);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
 });
 
 app.listen(3000);

@@ -7,7 +7,7 @@ document.getElementById('prompt-form').addEventListener('submit', async function
     const lengthInput = document.getElementById('playlist-length');
     let playlistLength = parseInt(lengthInput.value, 10) || 20;
     if (playlistLength < 1) playlistLength = 1;
-    if (playlistLength > 100) playlistLength = 100;
+    if (playlistLength > 30) playlistLength = 30;
     if (!prompt) {
         alert('Please enter a playlist description.');
         return;
@@ -39,22 +39,6 @@ if (window.location.pathname === '/result') {
         if (playlistUrl) {
             const link = document.querySelector('.playlist-link');
             if (link) link.href = playlistUrl;
-        }
-        if (tracks.length > 0) {
-            const ul = document.querySelector('ul');
-            if (ul) {
-                ul.innerHTML = '';
-                tracks.forEach(track => {
-                    const li = document.createElement('li');
-                    // If track is an object with artist and title, show nicely
-                    if (typeof track === 'object' && track.artist && track.title) {
-                        li.textContent = `${track.artist} – ${track.title}`;
-                    } else {
-                        li.textContent = track;
-                    }
-                    ul.appendChild(li);
-                });
-            }
         }
     });
 }

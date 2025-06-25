@@ -63,18 +63,8 @@
     height: 44px;
     box-sizing: border-box;
     margin-bottom: 0;
-    /* Hide spinner buttons for all browsers */
-    -webkit-appearance: none;
-    -moz-appearance: textfield;
-    appearance: textfield;
     display: inline-block;
     vertical-align: middle;
-}
-/* Remove spinners for Chrome, Safari, Edge */
-.playlist-length-box::-webkit-outer-spin-button,
-.playlist-length-box::-webkit-inner-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
 }
 
 .submit-button, .generate-button {
@@ -108,7 +98,6 @@
     margin-top: 20px;
 }
 
-/* Footer Styles */
 footer {
     position: fixed;
     bottom: 0;
@@ -136,7 +125,7 @@ footer {
 </style>
 </head>
 <body>
-    <h1 style="margin-top: 50px; margin-bottom: 8px;">Input up to 5 Artists, Genres, or Songs</h1>
+    <h1 style="margin-top: 50px; margin-bottom: 8px;">PlaylistPal</h1>
     <div class="container">
         <p style="margin: 0 0 18px 0; text-align: center; font-size: 1.1em; color: #444;">Describe the mood, genres, artists, or any vibes you want in your playlist!</p>
         <form id="prompt-form" class="form-row" style="display: flex; flex-direction: column; align-items: center;">
@@ -152,15 +141,6 @@ footer {
                 <img src="/images/riley_liya.JPG" alt="Footer Button">
             </a>
         </footer>
-
-        <!-- Artist Selection Modal -->
-        <div id="artist-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.6); z-index:1000; justify-content:center; align-items:center;">
-            <div id="artist-modal-content" style="background:#fff; padding:32px; border-radius:12px; max-width:500px; margin:auto;">
-                <h3>Select an Artist</h3>
-                <div id="artist-options"></div>
-                <button id="artist-modal-cancel" style="margin-top:16px;">Cancel</button>
-            </div>
-        </div>
 
         <script src="/helpers/input_handler.js"></script>
     </body>
