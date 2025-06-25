@@ -233,17 +233,31 @@ app.post('/api/generate-playlist', async (req, res) => {
         let baseName = 'playlistPal';
         let playlistName = baseName;
         let suffix = 1;
-        let existing = true;
-        while (existing) {
-            // Search for existing playlists with this name
-            const existingRes = await axios.get('https://api.spotify.com/v1/me/playlists', {
-                headers: { 'Authorization': `Bearer ${accessToken}` },
-                params: { limit: 50 }
+        let allNames = [];
+        let nextUrl = 'https://api.spotify.com/v1/me/playlists?limit=50';
+        while (nextUrl) {
+            const resp = await axios.get(nextUrl, {
+                headers: { 'Authorization': `Bearer ${accessToken}` }
             });
-            existing = existingRes.data.items.some(p => p.name === playlistName);
-            if (existing) {
-                playlistName = `${baseName} ${suffix++}`;
+            allNames.push(...resp.data.items.map(p => p.name));
+            nextUrl = resp.data.next;
+        }
+        // Find all playlistPal and playlistPal N
+        let maxSuffix = 0;
+        allNames.forEach(name => {
+            if (name === baseName) {
+                maxSuffix = Math.max(maxSuffix, 1);
+            } else {
+                const match = name.match(/^playlistPal (\d+)$/);
+                if (match) {
+                    maxSuffix = Math.max(maxSuffix, parseInt(match[1], 10));
+                }
             }
+        });
+        if (maxSuffix === 0) {
+            playlistName = baseName;
+        } else {
+            playlistName = `${baseName} ${maxSuffix + 1}`;
         }
         const playlistRes = await axios.post('https://api.spotify.com/v1/me/playlists', {
             name: playlistName,
