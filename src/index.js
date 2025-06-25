@@ -117,6 +117,11 @@ app.get('/api/search-artist', async (req, res) => {
 });
 
 app.post('/api/generate-playlist', async (req, res) => {
+    // --- DEBUG: Log session and token info for this request ---
+    console.log('--- GENERATE PLAYLIST REQUEST ---');
+    console.log('Session ID:', req.sessionID);
+    console.log('Session spotifyToken:', req.session.spotifyToken);
+    // ---------------------------------------------------------
     try {
         const { prompt, playlistLength } = req.body;
         let numSongs = parseInt(playlistLength, 10);
@@ -144,12 +149,16 @@ app.post('/api/generate-playlist', async (req, res) => {
                 if (tokenData.refresh_token) {
                     req.session.spotifyToken.refresh_token = tokenData.refresh_token;
                 }
+                console.log('Refreshed Spotify token for user.');
             } catch (refreshError) {
+                console.error('Spotify access token expired and refresh failed for user:', refreshError);
                 return res.status(401).json({ error: 'Spotify access token expired and refresh failed. Please log in again.' });
             }
         } else if (!accessToken) {
+            console.error('Spotify access token missing or expired for user.');
             return res.status(401).json({ error: 'Spotify access token missing or expired. Please log in again.' });
         }
+        // All Spotify API requests below use the current user's access token
 
         // 1. Call OpenAI to get playlist songs
         const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -193,6 +202,7 @@ app.post('/api/generate-playlist', async (req, res) => {
         }
 
         // 2. For each { artist, track } pair, search Spotify for the track to get its URI
+        // --- All Spotify API requests below are on behalf of the current user ---
         const foundTracks = [];
         for (const item of songList) {
             if (!item.artist || !item.track) continue;
@@ -222,6 +232,7 @@ app.post('/api/generate-playlist', async (req, res) => {
                 }
             } catch (err) {
                 // Skip if not found
+                console.error('Error searching for track:', err.response ? err.response.data : err.message);
                 continue;
             }
         }
