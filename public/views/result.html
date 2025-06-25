@@ -2,21 +2,33 @@
 <html>
 <head>
     <title>Playlist Generated!</title>
+    <link rel="stylesheet" href="../public/css/home.css">
     <style>
-        body { font-family: Arial, sans-serif; background: #e0f7fa; margin: 0; padding: 0; }
-        .container { max-width: 600px; margin: 40px auto; background: #fff; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); padding: 32px; text-align: center; }
         .playlist-link { font-size: 1.2em; margin: 24px 0; display: block; }
         ul { text-align: left; margin: 0 auto; display: inline-block; }
+        .result-container {
+            max-width: 600px;
+            margin: 40px auto 80px auto;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            padding: 32px;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
-    <div class="container">
+    <div class="result-container">
         <h1>Playlist Generated!</h1>
         <p>Your new playlist has been created successfully.</p>
-
-        <a class="playlist-link" href="<%= playlist_url %>" target="_blank">Open your playlist on Spotify</a>
+        <a class="playlist-link button" href="<%= playlist_url %>" target="_blank">Open your playlist on Spotify</a>
         <br>
-        <a href="/input">Create another playlist</a>
+        <a class="button" href="/input">Create another playlist</a>
     </div>
+    <footer>
+        <a href="/about" class="footer-button">
+            <img src="/images/riley_liya.JPG" alt="Footer Button">
+        </a>
+    </footer>
 </body>
 </html>
