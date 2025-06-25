@@ -1,14 +1,18 @@
 body {
     background-color: #8ECAE6;
+    box-sizing: border-box;
 }
 
 footer {
     position: fixed;
+    left: 0;
+    right: 0;
     bottom: 0;
     width: 100%;
     background-color: #3D405B;
     text-align: center;
     height: 50px;
+    z-index: 100;
 }
 
 h1, p {
@@ -30,6 +34,8 @@ h1, p {
     justify-content: center;
     align-items: center;
     height: 80vh;
+    padding-bottom: 70px;
+    box-sizing: border-box;
 }
 
 .footer-button {
